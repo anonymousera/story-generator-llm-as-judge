@@ -25,10 +25,11 @@ SAFE_FALLBACK = (
 )
 
 
-def maybe_trace(result: pipeline.StoryResult, request: str, save: bool) -> None:
-    if save:
-        path = reporting.save_trace(result, request)
-        print(f"[trace] saved {path}")
+def write_trace(result: pipeline.StoryResult, request: str) -> None:
+    """Always persist a detailed JSON of the run (story + guard + every iteration's
+    judge critiques and verdicts) so the system's working is fully inspectable."""
+    path = reporting.save_trace(result, request)
+    print(f"[trace] full run details saved to {path}")
 
 
 def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
@@ -58,8 +59,7 @@ def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
         print("\n" + SAFE_FALLBACK + "\n")
 
 
-def feedback_loop(result: pipeline.StoryResult, user_input: str,
-                  print_unsafe: bool, save_trace: bool) -> None:
+def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: bool) -> None:
     """Let the reader request changes; re-enter the pipeline with their note."""
     while True:
         try:
@@ -77,7 +77,7 @@ def feedback_loop(result: pipeline.StoryResult, user_input: str,
             user_feedback=answer,
         )
         present(result, print_unsafe)
-        maybe_trace(result, f"{user_input} || feedback: {answer}", save_trace)
+        write_trace(result, f"{user_input} || feedback: {answer}")
 
 
 def main() -> None:
@@ -91,21 +91,16 @@ def main() -> None:
     parser.add_argument(
         "--quiet",
         action="store_true",
-        help="Suppress the pipeline trace (router/judge/reviser logs).",
-    )
-    parser.add_argument(
-        "--save-trace",
-        action="store_true",
-        help="Write a JSON trace of each run (story + guard verdict + judge "
-             "scores) to runs/<timestamp>.json.",
+        help="Suppress the live pipeline logs (router/judge/reviser). The JSON "
+             "trace is always written regardless.",
     )
     args = parser.parse_args()
 
     user_input = input("What kind of story do you want to hear? ")
     result = pipeline.run(user_input, verbose=not args.quiet)
-    present(result, args.print_unsafe)
-    maybe_trace(result, user_input, args.save_trace)
-    feedback_loop(result, user_input, args.print_unsafe, args.save_trace)
+    present(result, args.print_unsafe)          # story printed to the terminal
+    write_trace(result, user_input)             # detailed JSON always written
+    feedback_loop(result, user_input, args.print_unsafe)
 
 
 if __name__ == "__main__":

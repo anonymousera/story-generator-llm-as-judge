@@ -249,6 +249,28 @@ def test_run_guard_disabled_withholds_when_gate_fails(monkeypatch):
     assert result.compulsory_ok is False                # gate withholds end-to-end
 
 
+def test_history_captures_full_per_iteration_detail(monkeypatch):
+    _stub_generation(monkeypatch)
+
+    def fake_eval(story):
+        a = _passing_assessment()
+        a["_critiques"] = {"positive": "lovely", "negative": "one nit", "general": "solid"}
+        a["_length_report"] = "PASS: every sentence is under 20 words."
+        return a
+
+    monkeypatch.setattr(pipeline, "evaluate", fake_eval)
+    result = pipeline.run("a story", verbose=False)
+
+    h = result.history[0]
+    assert h["story"] == "story v1"
+    assert h["judges"] == {"positive": "lovely", "negative": "one nit", "general": "solid"}
+    assert h["length_check"].startswith("PASS")
+    assert h["final_judge"]["passed"] is True
+    # The detail is moved out of the top-level assessment, not duplicated there.
+    assert "_critiques" not in result.assessment
+    assert "_length_report" not in result.assessment
+
+
 def test_run_sanitizes_mild_and_proceeds(monkeypatch):
     guard = {"severity": "mild", "reason": "mentions a monster",
              "sanitize_note": "Make the monster friendly and silly.", "safe_redirect": ""}

@@ -141,6 +141,7 @@ def run_case(case: dict) -> dict:
     return {
         "request": case["request"],
         "severity": result.guard.get("severity", "?"),
+        "guard": result.guard,
         "blocked": result.blocked,
         "categories": result.categories,
         "routed_ok": routed_ok,
@@ -149,6 +150,7 @@ def run_case(case: dict) -> dict:
         "expect_gate": case["expect_gate"],
         "gate_ok": gate_ok,
         "story": result.block_message if result.blocked else result.story,
+        "history": result.history,   # full per-iteration judge critiques + verdicts
     }
 
 

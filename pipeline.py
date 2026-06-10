@@ -218,13 +218,19 @@ def run(
 
     for attempt in range(1, MAX_REVISIONS + 2):  # 1 draft + MAX_REVISIONS revisions.
         assessment = evaluate(story)
+        # Pull the per-iteration detail off the assessment so the top-level copy
+        # stays clean while history keeps the full picture for every attempt.
+        critiques = assessment.pop("_critiques", {})
+        length_report = assessment.pop("_length_report", "")
         passed = is_passing(assessment)
         history.append({
             "attempt": attempt,
+            "story": story,
+            "judges": critiques,                 # all three judges' critiques verbatim
+            "length_check": length_report,       # deterministic sentence-length report
+            "final_judge": assessment,           # structured verdict (compulsory/scores/notes)
             "passed": passed,
             "compulsory_ok": compulsory_ok(assessment),
-            "quality_scores": assessment.get("quality_scores", {}),
-            "revision_notes": assessment.get("revision_notes", ""),
         })
         if verbose:
             scores = assessment.get("quality_scores", {})
