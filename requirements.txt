@@ -1,0 +1,4 @@
+# The skeleton uses the legacy openai.ChatCompletion API, which was removed in
+# openai >= 1.0. Pin to the last 0.x release so the original call style works.
+openai<1.0
+python-dotenv>=1.0
