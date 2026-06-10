@@ -29,7 +29,11 @@ python main.py --quiet          # hide the router/judge/reviser trace
 
 ```mermaid
 flowchart LR
-    input([User input]) --> cat["Categorization<br/>(multi-label, can be &gt;1)<br/>magic · adventure · mystery<br/>educational · family · friends · other"]
+    input([User input]) --> guard{"Input Guard<br/>(temp 0.0)<br/>classify intent:<br/>safe / mild / egregious<br/>+ jailbreak detection"}
+    guard -->|egregious| block([Blocked at the door<br/>print safe redirect<br/>storyteller never runs])
+    guard -->|"mild → inject sanitize note"| cat
+    guard -->|safe| cat
+    cat["Categorization<br/>(multi-label, can be &gt;1)<br/>magic · adventure · mystery<br/>educational · family · friends · other"]
     cat --> tmpl["Prompt selection / generation<br/>from the chosen category template(s)"]
     tmpl --> gen["LLM Call — Storyteller<br/>temp ~0.9 (creative)<br/>max 3 generations total"]
     gen --> draft["Story draft"]
@@ -61,6 +65,7 @@ flowchart LR
 
 | Stage | Role | Notes |
 |---|---|---|
+| **Input Guard** | Screen the *request* before any generation | classifies intent as safe / mild / egregious and catches jailbreak/prompt-injection. **mild** → sanitize note steers the storyteller; **egregious** → hard block + safe redirect (no generation). Fails *soft* to mild on parse error. Defense-in-depth: judges + gate still run downstream. |
 | **Categorization** | Classify the request into one *or more* categories | magic, adventure, mystery, educational, family, friends, other |
 | **Prompt selection** | Build the storyteller prompt from the matched category template(s) | combines templates when multiple categories match |
 | **Storyteller (LLM Call)** | Generate / revise the story | high temperature (~0.9); runs **at most 3 times** (1 draft + ≤2 revisions) |

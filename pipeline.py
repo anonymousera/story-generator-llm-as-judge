@@ -19,6 +19,9 @@ MIN_QUALITY = 3            # Each quality score must reach this to "pass".
 STORY_TEMP = 0.9           # Hot: creative generation.
 JUDGE_TEMP = 0.2           # Cold: consistent evaluation.
 ROUTER_TEMP = 0.0          # Deterministic categorization.
+GUARD_TEMP = 0.0           # Deterministic input screening.
+
+DEFAULT_REDIRECT = "Let's pick a happier story! How about a friendly dragon who loves to bake?"
 
 
 @dataclass
@@ -29,6 +32,9 @@ class StoryResult:
     compulsory_ok: bool        # Did every compulsory item pass?
     iterations: int            # How many times the storyteller ran.
     history: list[dict] = field(default_factory=list)  # Per-iteration trace.
+    guard: dict = field(default_factory=dict)          # Input-guard verdict.
+    blocked: bool = False      # True if the request was hard-blocked at the door.
+    block_message: str = ""    # Kid-friendly redirect shown when blocked.
 
 
 def _parse_json(text: str) -> dict | None:
@@ -44,6 +50,25 @@ def _parse_json(text: str) -> dict | None:
         except json.JSONDecodeError:
             return None
     return None
+
+
+def screen_input(text: str) -> dict:
+    """Front-door guard: classify the request's intent before generating.
+
+    Returns a dict with 'severity' in {safe, mild, egregious}. On an unparseable
+    response we fail *soft* to 'mild' (sanitize and proceed) rather than blocking
+    a legitimate child over a parse glitch — the downstream judges + gate remain.
+    """
+    raw = call_model(prompts.input_guard_prompt(text), temperature=GUARD_TEMP, max_tokens=200)
+    verdict = _parse_json(raw)
+    if verdict is None or verdict.get("severity") not in {"safe", "mild", "egregious"}:
+        return {
+            "severity": "mild",
+            "reason": "Guard response could not be parsed; defaulting to gentle handling.",
+            "sanitize_note": "Keep everything calm, kind, and age-appropriate.",
+            "safe_redirect": DEFAULT_REDIRECT,
+        }
+    return verdict
 
 
 def categorize(user_input: str) -> list[str]:
@@ -115,6 +140,7 @@ def generate_story(
     revision_notes: str | None = None,
     previous_story: str | None = None,
     user_feedback: str | None = None,
+    sanitize_note: str | None = None,
 ) -> str:
     prompt = prompts.storyteller_prompt(
         user_input,
@@ -122,6 +148,7 @@ def generate_story(
         revision_notes=revision_notes,
         previous_story=previous_story,
         user_feedback=user_feedback,
+        sanitize_note=sanitize_note,
     )
     return call_model(
         prompt,
@@ -136,12 +163,43 @@ def run(
     previous_story: str | None = None,
     user_feedback: str | None = None,
     verbose: bool = True,
+    guard_enabled: bool = True,
 ) -> StoryResult:
     """Generate and refine a story for a single request.
 
     `previous_story` + `user_feedback` seed a human-requested revision; otherwise
     a fresh story is written from `user_input`.
+
+    `guard_enabled=False` skips the front-door guard so the downstream judges +
+    compulsory gate can be exercised in isolation (used by the eval harness to
+    test the gate's fail-closed path).
     """
+    # 1) Front-door guard on the incoming text (the request, or the human's
+    #    change request on a feedback turn).
+    if guard_enabled:
+        guard = screen_input(user_feedback or user_input)
+    else:
+        guard = {"severity": "safe", "reason": "guard disabled (eval)",
+                 "sanitize_note": "", "safe_redirect": ""}
+    if verbose:
+        print(f"[guard] severity={guard.get('severity')}: {guard.get('reason', '')}")
+
+    if guard.get("severity") == "egregious":
+        # Hard block: never call the storyteller.
+        return StoryResult(
+            story="",
+            categories=[],
+            assessment={},
+            compulsory_ok=False,
+            iterations=0,
+            guard=guard,
+            blocked=True,
+            block_message=guard.get("safe_redirect") or DEFAULT_REDIRECT,
+        )
+
+    # Mild requests are sanitized; this note steers every generation below.
+    sanitize_note = guard.get("sanitize_note") if guard.get("severity") == "mild" else None
+
     if categories is None:
         categories = categorize(user_input)
         if verbose:
@@ -152,6 +210,7 @@ def run(
         categories,
         previous_story=previous_story,
         user_feedback=user_feedback,
+        sanitize_note=sanitize_note,
     )
 
     history: list[dict] = []
@@ -184,6 +243,7 @@ def run(
             categories,
             revision_notes=notes,
             previous_story=story,
+            sanitize_note=sanitize_note,
         )
 
     return StoryResult(
@@ -193,4 +253,5 @@ def run(
         compulsory_ok=compulsory_ok(assessment),
         iterations=len(history),
         history=history,
+        guard=guard,
     )

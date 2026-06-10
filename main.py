@@ -25,7 +25,12 @@ SAFE_FALLBACK = (
 
 
 def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
-    """Apply the compulsory-safety gate, then print the outcome."""
+    """Apply the input guard + compulsory-safety gate, then print the outcome."""
+    # Hard-blocked at the front door: show only the friendly redirect.
+    if result.blocked:
+        print("\n" + result.block_message + "\n")
+        return
+
     if result.compulsory_ok:
         print("\n" + result.story + "\n")
         return

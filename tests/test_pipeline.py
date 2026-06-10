@@ -139,15 +139,24 @@ def test_evaluate_fails_closed_on_bad_json(monkeypatch):
 
 # --- run: revision-loop control flow ---------------------------------------
 
-def _stub_generation(monkeypatch):
-    """Stub categorize + generate_story; return the call recorder for asserts."""
+def _safe_guard():
+    return {"severity": "safe", "reason": "ok", "sanitize_note": "", "safe_redirect": ""}
+
+
+def _stub_generation(monkeypatch, guard=None):
+    """Stub guard + categorize + generate_story; return the call recorder."""
     calls = []
 
     def fake_generate(user_input, categories, revision_notes=None,
-                      previous_story=None, user_feedback=None):
-        calls.append({"revision_notes": revision_notes, "previous_story": previous_story})
+                      previous_story=None, user_feedback=None, sanitize_note=None):
+        calls.append({
+            "revision_notes": revision_notes,
+            "previous_story": previous_story,
+            "sanitize_note": sanitize_note,
+        })
         return f"story v{len(calls)}"
 
+    monkeypatch.setattr(pipeline, "screen_input", lambda text: guard or _safe_guard())
     monkeypatch.setattr(pipeline, "categorize", lambda x: ["friends"])
     monkeypatch.setattr(pipeline, "generate_story", fake_generate)
     return calls
@@ -185,3 +194,69 @@ def test_run_respects_max_revisions(monkeypatch):
     assert result.iterations == pipeline.MAX_REVISIONS + 1   # 1 draft + 2 revisions
     assert len(calls) == pipeline.MAX_REVISIONS + 1
     assert result.compulsory_ok is False                     # gate would withhold
+
+
+# --- input guard -----------------------------------------------------------
+
+def test_screen_input_parses_valid(monkeypatch):
+    payload = '{"severity": "egregious", "reason": "graphic", "sanitize_note": "", "safe_redirect": "try a puppy"}'
+    monkeypatch.setattr(pipeline, "call_model", lambda *a, **k: payload)
+    v = pipeline.screen_input("something nasty")
+    assert v["severity"] == "egregious"
+
+
+def test_screen_input_fails_soft_to_mild(monkeypatch):
+    monkeypatch.setattr(pipeline, "call_model", lambda *a, **k: "not json")
+    v = pipeline.screen_input("ambiguous")
+    assert v["severity"] == "mild"
+    assert v["sanitize_note"]            # a steer is provided
+
+
+def test_screen_input_rejects_unknown_severity(monkeypatch):
+    monkeypatch.setattr(pipeline, "call_model", lambda *a, **k: '{"severity": "spicy"}')
+    assert pipeline.screen_input("x")["severity"] == "mild"
+
+
+def test_run_blocks_egregious_without_generating(monkeypatch):
+    guard = {"severity": "egregious", "reason": "graphic", "sanitize_note": "",
+             "safe_redirect": "How about a story about a kind robot?"}
+    calls = _stub_generation(monkeypatch, guard=guard)
+    monkeypatch.setattr(pipeline, "evaluate", lambda story: _passing_assessment())
+
+    result = pipeline.run("write something violent", verbose=False)
+    assert result.blocked is True
+    assert result.story == ""
+    assert result.iterations == 0
+    assert len(calls) == 0                # storyteller never ran
+    assert result.block_message == guard["safe_redirect"]
+
+
+def test_run_guard_disabled_withholds_when_gate_fails(monkeypatch):
+    """With the front-door guard off, an always-failing judge must drive the
+    pipeline to fail-closed (compulsory_ok False) after exhausting revisions —
+    the deterministic proof of the WITHHELD path the live eval can only sample."""
+    calls = _stub_generation(monkeypatch)
+
+    def boom(text):
+        raise AssertionError("screen_input must not run when guard_enabled=False")
+
+    monkeypatch.setattr(pipeline, "screen_input", boom)
+    monkeypatch.setattr(pipeline, "evaluate", lambda story: _failing_assessment())
+
+    result = pipeline.run("anything", verbose=False, guard_enabled=False)
+    assert result.blocked is False
+    assert len(calls) == pipeline.MAX_REVISIONS + 1     # storyteller ran the full budget
+    assert result.compulsory_ok is False                # gate withholds end-to-end
+
+
+def test_run_sanitizes_mild_and_proceeds(monkeypatch):
+    guard = {"severity": "mild", "reason": "mentions a monster",
+             "sanitize_note": "Make the monster friendly and silly.", "safe_redirect": ""}
+    calls = _stub_generation(monkeypatch, guard=guard)
+    monkeypatch.setattr(pipeline, "evaluate", lambda story: _passing_assessment())
+
+    result = pipeline.run("a story about a scary monster", verbose=False)
+    assert result.blocked is False
+    assert result.iterations == 1
+    # The sanitize note was threaded into generation.
+    assert calls[0]["sanitize_note"] == guard["sanitize_note"]
