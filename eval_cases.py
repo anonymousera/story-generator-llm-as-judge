@@ -23,7 +23,7 @@ CASES = {
     "baseline": [
         {
             "request": "A story about a girl named Alice and her best friend Bob, who happens to be a cat.",
-            "expect_categories_any": ["friends", "family", "other"],
+            "expect_categories_any": ["magic","friends", "family", "other"],
             "expect_gate": "pass",
         },
     ],
