@@ -39,7 +39,7 @@ flowchart LR
     gen --> draft["Story draft"]
 
     %% Parallel evaluation
-    draft --> det["Deterministic checks (Python, no LLM)<br/>sentence length &lt; 20 words<br/>(tokenize on . ? !)"]
+    draft --> det["Deterministic checks (Python, no LLM)<br/>sentence length &lt; 25 words<br/>(tokenize on . ? !)"]
     draft --> j1["Judge 1 — positive critique<br/>temp ~0.2"]
     draft --> j2["Judge 2 — negative critique<br/>temp ~0.2"]
     draft --> j3["Judge 3 — general critique<br/>temp ~0.2"]
@@ -69,7 +69,7 @@ flowchart LR
 | **Categorization** | Classify the request into one *or more* categories | magic, adventure, mystery, educational, family, friends, other |
 | **Prompt selection** | Build the storyteller prompt from the matched category template(s) | combines templates when multiple categories match |
 | **Storyteller (LLM Call)** | Generate / revise the story | high temperature (~0.9); runs **at most 3 times** (1 draft + ≤2 revisions) |
-| **Deterministic checks** | Cheap, reliable, non-LLM validation | sentence length `< 20` words via split on `.?!`. (No bad-word blocklist for now — hard to enumerate.) |
+| **Deterministic checks** | Cheap, reliable, non-LLM validation | sentence length `< 25` words via split on `.?!`. (No bad-word blocklist for now — hard to enumerate.) |
 | **Judge 1 / 2 / 3** | Critique the draft against the preference list | J1 = positive critique, J2 = negative critique, **J3 = general (no positive/negative bias)**; low temperature (~0.2); each returns a qualitative summary (metric 1/2/3) |
 | **Final Judge** | Aggregate the three metrics + deterministic report | emits **structured output**: per-compulsory-item pass/fail, quality scores, `passed`, and `revision_notes` |
 | **Revision loop** | Feed `revision_notes` back into the storyteller | bounded to **≤ 2 revisions**; the nudge is injected into the next prompt |
@@ -84,7 +84,7 @@ flowchart LR
      story is **not printed** (safety first); a safe fallback message is shown.
    - Set `True`: the story is printed with a **WARNING** header. This mode
      exists **only for evaluation/debugging**, not normal use.
-3. **Deterministic sentence-length check** (`< 20` words, split on `.?!`)
+3. **Deterministic sentence-length check** (`< 25` words, split on `.?!`)
    instead of asking an LLM to count. No bad-word blocklist for now.
 4. **Final metrics are structured** (per-item pass/fail + quality scores +
    `passed`), while the per-judge metrics stay qualitative to drive good
@@ -113,7 +113,7 @@ flowchart LR
 **Preferred** (shortfalls can still print, optionally with a WARNING):
 
 - Simple language and grammar; no complex words
-- Sentences `< 20` words *(deterministically checked)*
+- Sentences `< 25` words *(deterministically checked)*
 - Fun and engaging; holds a 5–10 year old's attention
 - Readable aloud by a 5–10 year old
 - In English (any language background)

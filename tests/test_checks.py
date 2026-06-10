@@ -18,23 +18,24 @@ def test_short_sentences_pass():
 
 
 def test_sentence_at_threshold_is_flagged():
-    # Exactly 20 words: the rule is "< 20", so 20 must be flagged.
-    twenty = " ".join(["word"] * 20) + "."
-    flagged = checks.long_sentences(twenty)
+    # Exactly MAX_WORDS: the rule is "< MAX_WORDS", so the boundary must flag.
+    at_limit = " ".join(["word"] * checks.MAX_WORDS) + "."
+    flagged = checks.long_sentences(at_limit)
     assert len(flagged) == 1
-    assert flagged[0][1] == 20
+    assert flagged[0][1] == checks.MAX_WORDS
 
 
-def test_nineteen_words_passes():
-    nineteen = " ".join(["word"] * 19) + "."
-    assert checks.long_sentences(nineteen) == []
+def test_just_under_limit_passes():
+    under = " ".join(["word"] * (checks.MAX_WORDS - 1)) + "."
+    assert checks.long_sentences(under) == []
 
 
 def test_length_report_lists_offenders():
-    long = " ".join(["word"] * 25) + "."
+    count = checks.MAX_WORDS + 5
+    long = " ".join(["word"] * count) + "."
     report = checks.length_report("Short one. " + long)
     assert report.startswith("FAIL")
-    assert "25 words" in report
+    assert f"{count} words" in report
 
 
 def test_custom_max_words():

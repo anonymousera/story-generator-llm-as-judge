@@ -7,7 +7,7 @@ into the Final Judge alongside the LLM critiques.
 """
 import re
 
-MAX_WORDS = 20
+MAX_WORDS = 25
 
 
 def split_sentences(text: str) -> list[str]:

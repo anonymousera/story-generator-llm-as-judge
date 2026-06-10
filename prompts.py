@@ -26,7 +26,7 @@ COMPULSORY: dict[str, str] = {
 
 PREFERRED: dict[str, str] = {
     "simple_language": "Use simple language and grammar; no complex words.",
-    "short_sentences": "Keep sentences short (under 20 words).",
+    "short_sentences": "Keep sentences short (under 25 words).",
     "engaging": "Be fun and engaging; hold a 5-10 year old's attention.",
     "read_aloud": "Be easy to read aloud by a 5-10 year old.",
     "english": "Be written in English.",

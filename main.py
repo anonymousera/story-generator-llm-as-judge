@@ -55,7 +55,7 @@ def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
 
 
 def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: bool,
-                  turns: list, path: str) -> None:
+                  turns: list, path: str, verbose: bool) -> None:
     """Let the reader request changes (up to MAX_FEEDBACK times). Each round is
     appended to the same conversation file rather than creating a new one."""
     rounds = 0
@@ -77,6 +77,7 @@ def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: b
             categories=result.categories,
             previous_story=result.story,
             user_feedback=answer,
+            verbose=verbose,
         )
         present(result, print_unsafe)
         turns.append(reporting.make_turn(result, "feedback", feedback=answer))
@@ -102,8 +103,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    verbose = not args.quiet
     user_input = input("What kind of story do you want to hear? ")
-    result = pipeline.run(user_input, verbose=not args.quiet)
+    result = pipeline.run(user_input, verbose=verbose)
     present(result, args.print_unsafe)          # story printed to the terminal
 
     # One conversation = one JSON file, updated in place across feedback rounds.
@@ -112,8 +114,7 @@ def main() -> None:
     reporting.save_conversation(user_input, turns, path)
     print(f"[trace] full run details saved to {path}")
 
-    feedback_loop(result, user_input, args.print_unsafe, turns, path)
-
+    feedback_loop(result, user_input, args.print_unsafe, turns, path, verbose)
 
 if __name__ == "__main__":
     main()
