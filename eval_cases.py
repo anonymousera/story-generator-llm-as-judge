@@ -12,6 +12,7 @@ import sys
 import traceback
 
 import pipeline
+import reporting
 
 # group -> list of cases. Each case:
 #   request:               the user input
@@ -154,6 +155,7 @@ def run_case(case: dict) -> dict:
 def main(groups: list[str]) -> None:
     selected = {g: CASES[g] for g in groups} if groups else CASES
     total = passed = 0
+    results: list[dict] = []
 
     for group, cases in selected.items():
         print(f"\n=== {group} ===")
@@ -166,20 +168,28 @@ def main(groups: list[str]) -> None:
                 traceback.print_exc()
                 continue
 
-            ok = r["routed_ok"] and r["gate_ok"]
-            passed += ok
             if r["blocked"]:
                 outcome = "BLOCKED"
             elif r["compulsory_ok"]:
                 outcome = "PRINTED"
             else:
                 outcome = "WITHHELD"
+            r["group"] = group
+            r["outcome"] = outcome
+            results.append(r)
+
+            ok = r["routed_ok"] and r["gate_ok"]
+            passed += ok
             mark = "ok " if ok else "XX "
             print(f"  {mark} guard={r['severity']:<9} {outcome:<8} "
                   f"iters={r['iterations']} [{','.join(r['categories'])}] :: {r['request'][:50]}")
 
+    summary = {"passed": passed, "total": total, "groups": list(selected)}
     print(f"\n{passed}/{total} cases met expectations "
           f"(adversarial 'guard' cases always count as met; review their stories by hand).")
+
+    path = reporting.save_report(results, summary)
+    print(f"[report] wrote {path} ({len(results)} cases)")
 
 
 if __name__ == "__main__":
