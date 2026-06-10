@@ -17,14 +17,34 @@ def _sample_result():
     )
 
 
-def test_save_trace_writes_valid_json(tmp_path):
-    path = reporting.save_trace(_sample_result(), "a story about a cat", out_dir=str(tmp_path))
+def test_make_turn_embeds_result_and_metadata():
+    turn = reporting.make_turn(_sample_result(), "feedback", feedback="make it funnier")
+    assert turn["kind"] == "feedback"
+    assert turn["feedback"] == "make it funnier"
+    assert turn["story"] == "Once upon a time..."          # full StoryResult detail inlined
+    assert turn["guard"]["severity"] == "safe"
+
+
+def test_conversation_updates_same_file_across_turns(tmp_path):
+    path = str(tmp_path / "conv.json")
+
+    # Initial turn.
+    turns = [reporting.make_turn(_sample_result(), "initial")]
+    reporting.save_conversation("a story about a cat", turns, path)
+
+    # Feedback turn appended -> same file, rewritten.
+    turns.append(reporting.make_turn(_sample_result(), "feedback", feedback="shorter please"))
+    reporting.save_conversation("a story about a cat", turns, path)
+
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     assert data["request"] == "a story about a cat"
-    assert data["story"] == "Once upon a time..."
-    assert data["guard"]["severity"] == "safe"
-    assert data["compulsory_ok"] is True
+    assert data["turn_count"] == 2
+    assert data["turns"][0]["kind"] == "initial"
+    assert data["turns"][1]["kind"] == "feedback"
+    assert data["turns"][1]["feedback"] == "shorter please"
+    # Only one file exists for the conversation.
+    assert len(list(tmp_path.glob("*.json"))) == 1
 
 
 def test_save_report_writes_summary_and_results(tmp_path):

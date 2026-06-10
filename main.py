@@ -24,12 +24,7 @@ SAFE_FALLBACK = (
     "Want to try a different idea?"
 )
 
-
-def write_trace(result: pipeline.StoryResult, request: str) -> None:
-    """Always persist a detailed JSON of the run (story + guard + every iteration's
-    judge critiques and verdicts) so the system's working is fully inspectable."""
-    path = reporting.save_trace(result, request)
-    print(f"[trace] full run details saved to {path}")
+MAX_FEEDBACK = 3  # how many times the user may request changes
 
 
 def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
@@ -59,17 +54,24 @@ def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
         print("\n" + SAFE_FALLBACK + "\n")
 
 
-def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: bool) -> None:
-    """Let the reader request changes; re-enter the pipeline with their note."""
-    while True:
+def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: bool,
+                  turns: list, path: str) -> None:
+    """Let the reader request changes (up to MAX_FEEDBACK times). Each round is
+    appended to the same conversation file rather than creating a new one."""
+    rounds = 0
+    while rounds < MAX_FEEDBACK:
+        remaining = MAX_FEEDBACK - rounds
         try:
-            answer = input("Would you like any changes? (e.g. 'make it funnier', or 'no'): ").strip()
+            answer = input(
+                f"Would you like any changes? ({remaining} left — e.g. 'make it funnier', or 'no'): "
+            ).strip()
         except EOFError:
             return
-        if not answer or answer.lower() in {"no", "n", "nope", "nah","quit", "exit"}:
+        if not answer or answer.lower() in {"no", "n", "nope", "nah", "quit", "exit"}:
             print("Sweet dreams!")
             return
 
+        rounds += 1
         result = pipeline.run(
             user_input,
             categories=result.categories,
@@ -77,7 +79,11 @@ def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: b
             user_feedback=answer,
         )
         present(result, print_unsafe)
-        write_trace(result, f"{user_input} || feedback: {answer}")
+        turns.append(reporting.make_turn(result, "feedback", feedback=answer))
+        reporting.save_conversation(user_input, turns, path)
+        print(f"[trace] conversation updated -> {path}")
+
+    print(f"That's the limit of {MAX_FEEDBACK} changes for one story. Sweet dreams!")
 
 
 def main() -> None:
@@ -99,8 +105,14 @@ def main() -> None:
     user_input = input("What kind of story do you want to hear? ")
     result = pipeline.run(user_input, verbose=not args.quiet)
     present(result, args.print_unsafe)          # story printed to the terminal
-    write_trace(result, user_input)             # detailed JSON always written
-    feedback_loop(result, user_input, args.print_unsafe)
+
+    # One conversation = one JSON file, updated in place across feedback rounds.
+    path = reporting.new_conversation_path()
+    turns = [reporting.make_turn(result, "initial")]
+    reporting.save_conversation(user_input, turns, path)
+    print(f"[trace] full run details saved to {path}")
+
+    feedback_loop(result, user_input, args.print_unsafe, turns, path)
 
 
 if __name__ == "__main__":
