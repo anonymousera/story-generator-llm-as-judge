@@ -1,18 +1,19 @@
 """Bedtime story generator — CLI entry point.
 
-Pipeline and design: see DESIGN.md. This file handles I/O: it runs the
+This file handles I/O: it runs the
 evaluator-optimizer pipeline, applies the compulsory-safety gate, and offers the
 reader a feedback turn to request changes.
 
-Before submitting the assignment, describe here in a few sentences what you
-would have built next if you spent 2 more hours on this project:
+What I'd have build next with 2 more hours: 
 
-  Next: (1) replace the JSON-in-prompt judge contract with structured/function
-  calling for reliability; (2) add a small bad-word + PII deterministic filter to
-  complement the LLM safety judges; (3) cache categorization and add a few-shot
-  example bank per category to lift story quality; (4) add a lightweight eval
-  harness (a fixed set of prompts scored by the same judges) to measure
-  regressions when prompts change.
+1. Restructuring JSON-outputs to be more readable and easier to understand for analysis and debugging.
+2. Add a deterministic bad-word / PII filter to complement the LLM safety judges.
+3. Run few more experiments to manually evaluate performace of the system, primarily to understand if it is too complex, or could it have performed better or similar without so many constraints. 
+Right now I'm implementing based on industry best practices, my own innovation to the design of the system and its prompts, and my own context-specific knowledge.  
+   1. measure whether all four metrics and the multi-judge panel actually beat a simpler configuration
+   2. tune the four metrics
+   3. tune the quality threshold.
+4. Would have also preferred to use different models for judges, guard, and storyteller, but the assignment constraint was to use the same model (gpt-3.5-turbo) for all.
 """
 import argparse
 
