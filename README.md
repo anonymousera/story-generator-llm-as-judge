@@ -90,10 +90,7 @@ The pipeline, stage by stage:
    pass. If not, the story is **withheld** (default) or printed with a `WARNING`
    under `--print-unsafe`.
 8. **Feedback loop** — the reader can request changes (up to 5), each re-entering
-   the pipeline; the whole conversation is saved to a single JSON file.
-
-A deeper write-up of every stage and the preference list lives in
-**[DESIGN.md](DESIGN.md)**.
+   the pipeline; the whole conversation is saved to a single JSON file
 
 ---
 
