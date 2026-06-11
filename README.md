@@ -206,14 +206,3 @@ real model.
 - The stories should be appropriate for any children of any gender identity background.: Compulsory
 - The stories should be appropriate for any children of any region of the world.
 
-## What I'd have build next (with 2 more hours)
-
-1. Restructuring JSON-outputs to be more readable and easier to understand for analysis and debugging.
-2. Add a deterministic bad-word / PII filter to complement the LLM safety judges.
-3. Run more experiments to manually evaluate performace of the system, primarily to understand if it is too complex, or could it have performed better or similar without so many constraints. 
-Right now I'm implementing based on industry best practices, my own innovation to the design of the system and its prompts, and my own context-specific knowledge.  
-   1. measure whether all four metrics and the multi-judge panel actually beat a simpler configuration
-   2. tune the four metrics
-   3. tune the quality threshold.
-4. Would have also preferred to use different models for judges, guard, and storyteller, but the assignment constraint was to use the same model for all.
-
