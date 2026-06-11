@@ -1,7 +1,4 @@
 """Preferences, category templates, and every prompt the pipeline issues.
-
-Keeping all prompt text in one place makes the system easy to tune and keeps
-the orchestration logic in pipeline.py readable.
 """
 
 # --- Preferences -----------------------------------------------------------
