@@ -147,28 +147,25 @@ def storyteller_prompt(
             sanitize_note,
         ]
 
-    # Revision driven by the Final Judge's feedback.
-    if previous_story and revision_notes:
+    # Show the existing draft once when we're adapting or revising one.
+    if previous_story:
+        parts += ["", "Current story:", "-----", previous_story, "-----"]
+
+    # The human reader's change request takes top priority. It is included even
+    # when there is no previous draft, and kept across the internal revision loop.
+    if user_feedback:
         parts += [
             "",
-            "Here is your previous draft:",
-            "-----",
-            previous_story,
-            "-----",
-            "Revise it to address this feedback, keeping what already works:",
-            revision_notes,
+            "The reader asked for this change — treat it as the top priority:",
+            user_feedback,
         ]
 
-    # Revision driven by the human reader.
-    if previous_story and user_feedback:
+    # The Final Judge's quality nudge.
+    if revision_notes:
         parts += [
             "",
-            "Here is the current story:",
-            "-----",
-            previous_story,
-            "-----",
-            "The reader asked for this change:",
-            user_feedback,
+            "Also improve the story per this feedback, keeping what already works:",
+            revision_notes,
         ]
 
     parts += ["", "Write the story now."]

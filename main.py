@@ -59,6 +59,7 @@ def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: b
     """Let the reader request changes (up to MAX_FEEDBACK times). Each round is
     appended to the same conversation file rather than creating a new one."""
     rounds = 0
+    base_request = user_input
     while rounds < MAX_FEEDBACK:
         remaining = MAX_FEEDBACK - rounds
         try:
@@ -72,13 +73,19 @@ def feedback_loop(result: pipeline.StoryResult, user_input: str, print_unsafe: b
             return
 
         rounds += 1
-        result = pipeline.run(
-            user_input,
-            categories=result.categories,
-            previous_story=result.story,
-            user_feedback=answer,
-            verbose=verbose,
-        )
+        if result.blocked or not result.story:
+            # Nothing to refine (the prior turn was blocked/withheld) -> treat the
+            # input as a brand-new request rather than feedback on a missing story.
+            base_request = answer
+            result = pipeline.run(base_request, verbose=verbose)
+        else:
+            result = pipeline.run(
+                base_request,
+                categories=result.categories,
+                previous_story=result.story,
+                user_feedback=answer,
+                verbose=verbose,
+            )
         present(result, print_unsafe)
         turns.append(reporting.make_turn(result, "feedback", feedback=answer))
         reporting.save_conversation(user_input, turns, path)

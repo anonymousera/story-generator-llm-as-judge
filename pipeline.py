@@ -249,6 +249,7 @@ def run(
             categories,
             revision_notes=notes,
             previous_story=story,
+            user_feedback=user_feedback,
             sanitize_note=sanitize_note,
         )
 

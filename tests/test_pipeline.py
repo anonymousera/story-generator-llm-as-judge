@@ -152,6 +152,7 @@ def _stub_generation(monkeypatch, guard=None):
         calls.append({
             "revision_notes": revision_notes,
             "previous_story": previous_story,
+            "user_feedback": user_feedback,
             "sanitize_note": sanitize_note,
         })
         return f"story v{len(calls)}"
@@ -269,6 +270,20 @@ def test_history_captures_full_per_iteration_detail(monkeypatch):
     # The detail is moved out of the top-level assessment, not duplicated there.
     assert "_critiques" not in result.assessment
     assert "_length_report" not in result.assessment
+
+
+def test_run_threads_feedback_through_revisions(monkeypatch):
+    """User feedback must survive the internal revision loop, not just the first
+    generation (the bug where revisions dropped user_feedback)."""
+    calls = _stub_generation(monkeypatch)
+    seq = iter([_failing_assessment(), _passing_assessment()])
+    monkeypatch.setattr(pipeline, "evaluate", lambda story: next(seq))
+
+    pipeline.run("original request", categories=["friends"], previous_story="old story",
+                 user_feedback="make it about beaches", verbose=False)
+
+    assert calls[0]["user_feedback"] == "make it about beaches"   # initial generation
+    assert calls[1]["user_feedback"] == "make it about beaches"   # and the revision
 
 
 def test_run_sanitizes_mild_and_proceeds(monkeypatch):
