@@ -75,7 +75,7 @@ flowchart LR
 | **Revision loop** | Feed `revision_notes` back into the storyteller | bounded to **≤ 2 revisions**; the nudge is injected into the next prompt |
 | **Compulsory safety gate** | Final guard before printing | see flag behavior below |
 
-## Decisions captured in this revision
+## Other Decisions
 
 1. **Judge 3 = general judge** — no positive/negative steer; it evaluates the
    draft holistically against the preferences.
