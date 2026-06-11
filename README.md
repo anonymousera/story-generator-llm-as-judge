@@ -129,8 +129,8 @@ Surprisingly, the community has found that adding stakes to the prompts (answer 
 Q) Before submitting the assignment, describe here in a few sentences what you would have built next if you spent 2 more hours on this project:
 Ans)
 1)  I'll run experiments to manually evaluate performace of the system, primarily to understand if it is too complex, or without so many constraints it could have performed similar or better. 
-Right now I'm implementing based on industry best practices, my own innovation to the system diagram, and my own context-specific knowledge. 
-2) Either th above, or  another experiment I would have done is optimizing the 4 metrics I've used in the system and see if  it can perform better. . 
+Right now I'm implementing based on industry best practices, my own innovation to the design of the system and its prompts, and my own context-specific knowledge. 
+2) Either the above, or  another experiment I would have done is optimizing the 4 metrics I've used in the system and see if  it can perform better. . 
 
 # Other few ideaas worth exploring: 
 
