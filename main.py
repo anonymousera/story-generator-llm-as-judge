@@ -24,7 +24,7 @@ SAFE_FALLBACK = (
     "Want to try a different idea?"
 )
 
-MAX_FEEDBACK = 3  # how many times the user may request changes
+MAX_FEEDBACK = 5  # how many times the user may request changes
 
 
 def present(result: pipeline.StoryResult, print_unsafe: bool) -> None:
