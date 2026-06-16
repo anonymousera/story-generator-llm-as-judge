@@ -1,6 +1,6 @@
 """Thin wrapper around the OpenAI chat API.
 
-The model is fixed to gpt-3.5-turbo per the assignment instructions. The only
+The model is fixed to gpt-3.5-turbo. The only
 additions over the original skeleton are an optional `system` message (for
 role/persona steering) and a per-call `temperature` so the storyteller can run
 hot (creative) while the judges run cold (consistent).
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL = "gpt-3.5-turbo"  # Do not change (assignment constraint).
+MODEL = "gpt-3.5-turbo"  
 
 
 def call_model(
@@ -21,7 +21,7 @@ def call_model(
     max_tokens: int = 3000,
     temperature: float = 0.1,
 ) -> str:
-    openai.api_key = os.getenv("OPENAI_API_KEY")  # please use your own openai api key here.
+    openai.api_key = os.getenv("OPENAI_API_KEY")  
 
     messages = []
     if system:

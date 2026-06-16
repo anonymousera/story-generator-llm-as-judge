@@ -1,4 +1,4 @@
-"""JSON artifacts for debugging and submission.
+"""JSON artifacts for debugging.
 
 The pipeline itself keeps everything in memory; these helpers are the only place
 that touches the filesystem.
