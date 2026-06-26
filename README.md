@@ -94,7 +94,7 @@ The pipeline, stage by stage:
 
 ---
 
-## Design choices can be found in [DESIGN.md](https://github.com/anonymousera/story-generator-llm-as-judge/blob/main/DESIGN.md). 
+Design choices can be found in [DESIGN.md](https://github.com/anonymousera/story-generator-llm-as-judge/blob/main/DESIGN.md). 
 
 
 ---
