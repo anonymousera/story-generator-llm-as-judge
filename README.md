@@ -94,37 +94,8 @@ The pipeline, stage by stage:
 
 ---
 
-## Design choices (and why)
+## Design choices can be found in [DESIGN.md](https://github.com/anonymousera/story-generator-llm-as-judge/blob/main/DESIGN.md). 
 
-- **Evaluator–optimizer over single-shot.** A judge-driven revise loop reliably
-  lifts quality and catches safety issues a single generation would miss.
-- **Three judges with different stances** (positive / negative / general). A
-  single judge tends to be sycophantic and inflate scores. Forcing one critic to
-  hunt for faults counteracts that bias and surfaces real problems and another to capture positive feedback. This is a
-  small jury: a known way to reduce self-preference bias.
-- **Defense in depth on safety.** An input guard at the door *and* judges *and* a
-  final compulsory gate. The guard is not a replacement for the judges, it's a
-  cheaper, earlier layer that also catches non-story attacks (jailbreaks).
-- **Hybrid guard policy.** `mild` requests are *sanitized* (a war story becomes a
-  story about peace) so we stay helpful. Only `egregious` requests are blocked.
-- **Fail-closed / fail-soft on purpose.** Unparseable judge output is treated as
-  *not passed* (safe). Unparseable guard output → treated as `mild` (sanitize),
-  so a parse glitch never refuses a legitimate child.
-- **Compulsory vs. preferred preferences.** Safety items are compulsory and can
-  withhold a story. Quality items (simple language, short sentences, engaging)
-  are preferred and only nudge revisions.
-- **Deterministic checks where they're cheaper and more reliable.** Sentence
-  length (`< 25` words, split on `.?!`) is verified in plain Python through tokenizer, LLM can miscount. The result is fed to the Final Judge.
-- **Structured output for decisions, prose for nudges.** The Final Judge returns
-  machine-readable pass/fail + scores (so the gate is reliable), while the
-  per-judge critiques stay qualitative (so revisions get rich guidance).
-- **Per-call temperature.** Storyteller hot (~0.9) for creativity, and judges/guard
-  cold (~0.0–0.2) for consistent evaluation.
-- **Full observability.** Every run writes a JSON trace capturing *each
-  iteration's* story, all three judges' critiques, the length check, and the
-  final verdict, to understand where and why the system improved/can be improved, and for deeper evaluation.
-- **MAX_FEEDBACK** is set to 5 to limit the number of feedback rounds, in case of adversarial users who keep requesting changes.
-- **MAX_WORDS** is set since children's stories should be of simpler language and easier to understadm, and lenghty sentences can be hard to grasp for them. 
 
 ---
 
@@ -183,26 +154,4 @@ guard, and the bounded revision loop (including feedback threading and the
 withhold path). The live eval exercises routing and the safety gate against the
 real model.
 
----
-
-## Current Measurement Units:
-- The stories should be appropriate for ages 5 to 10.: Compulsory
-- The stories should use simple language and grammar, and not use any complex words or grammar.
-- The stories should not have sentences that are too long, i.e. should be less than 25 words.
-- The stories should not have any violence or scary content.: Compulsory
-- The stories should not have any bad words or inappropriate or explicit content.: Compulsory
-- The stories should not have any political or religious content. This is a children's story, so it should not be too mature.: Compulsory
-- The stories should be fun and engaging, and should be able to hold the attention of a 5 to 10 year old.
-- The stories should be able to be read aloud by a 5 to 10 year old.
-- The stories should not have any controversial content.: Compulsory
-- The stories should be appropriate for any children of any race, gender, or ethnicity.: Compulsory   
-- The stories should be appropriate for any children of any religious or spiritual background.: Compulsory  
-- The stories should be appropriate for any children of any educational background.: Compulsory
-- The stories should be appropriate for any children of any socioeconomic background.: Compulsory
-- The stories should be appropriate for any children of any cultural background.: Compulsory
-- The stories should be appropriate for any children of any language background, though the story should be in English.
-- The stories should be appropriate for any children of any disability background.: Compulsory
-- The stories should be appropriate for any children of any sexual orientation background.: Compulsory
-- The stories should be appropriate for any children of any gender identity background.: Compulsory
-- The stories should be appropriate for any children of any region of the world.
 
