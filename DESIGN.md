@@ -1,4 +1,4 @@
-# Children's Story Generator — System Design
+# Children's Story Generator — (Compound AI) System Design
 
 An **evaluator–optimizer** pipeline: a storyteller drafts, a panel of judges
 critiques against a fixed list of preferences, a final judge aggregates and
