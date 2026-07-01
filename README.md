@@ -1,7 +1,7 @@
-# Bedtime Story Generator
+# Children's Story Generator
 
 A small agentic system that turns any bedtime-story request into a story that is
-**safe and appropriate for ages 5–10**. It is built as a **router** and an**evaluator–optimizer**
+**safe and appropriate for ages 5–10**. It is built as a **router** and an **evaluator–optimizer**
 loop: a storyteller drafts, a panel of LLM judges critiques against a fixed list
 of preferences, a final judge aggregates and gates, and the storyteller revises
 (bounded) until the story passes or the budget runs out, with a front-door
