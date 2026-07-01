@@ -68,9 +68,9 @@ flowchart LR
 | **Input Guard** | Screen the *request* before any generation | classifies intent as safe / mild / egregious and catches jailbreak/prompt-injection. **mild** → sanitize note steers the storyteller; **egregious** → hard block + safe redirect (no generation). Fails *soft* to mild on parse error. Defense-in-depth: judges + gate still run downstream. |
 | **Categorization** | Classify the request into one *or more* categories | magic, adventure, mystery, educational, family, friends, other |
 | **Prompt selection** | Build the storyteller prompt from the matched category template(s) | combines templates when multiple categories match |
-| **Storyteller (LLM Call)** | Generate / revise the story | high temperature (~0.9); runs **at most 3 times** (1 draft + ≤2 revisions) |
+| **Storyteller (LLM Call)** | Generate / revise the story | high temperature (~0.9) for creativity; runs **at most 3 times** (1 draft + ≤2 revisions) |
 | **Deterministic checks** | Cheap, reliable, non-LLM validation | sentence length `< 25` words via split on `.?!`. (No bad-word blocklist for now — hard to enumerate.) |
-| **Judge 1 / 2 / 3** | Critique the draft against the preference list | J1 = positive critique, J2 = negative critique, **J3 = general (no positive/negative bias)**; low temperature (~0.2); each returns a qualitative summary (metric 1/2/3) |
+| **Judge 1 / 2 / 3** | Critique the draft against the preference list | J1 = positive critique, J2 = negative critique, **J3 = general (no positive/negative bias)**; low temperature (~0.2) for consistent evaluation; each returns a qualitative summary (metric 1/2/3) |
 | **Final Judge** | Aggregate the three metrics + deterministic report | emits **structured output**: per-compulsory-item pass/fail, quality scores, `passed`, and `revision_notes` |
 | **Revision loop** | Feed `revision_notes` back into the storyteller | bounded to **≤ 2 revisions**; the nudge is injected into the next prompt |
 | **Compulsory safety gate** | Final guard before printing | see flag behavior below |
@@ -84,13 +84,10 @@ flowchart LR
      story is **not printed** (safety first); a safe fallback message is shown.
    - Set `True`: the story is printed with a **WARNING** header. This mode
      exists **only for evaluation/debugging**, not normal use.
-3. **Deterministic sentence-length check** (`< 25` words, split on `.?!`)
-   instead of asking an LLM to count. No bad-word blocklist for now.
+3. No bad-word blocklist for now.
 4. **Final metrics are structured** (per-item pass/fail + quality scores +
    `passed`), while the per-judge metrics stay qualitative to drive good
    revision nudges.
-5. **Per-call temperature**: storyteller hot (~0.9) for creativity, judges cold
-   (~0.2) for consistent evaluation.
 
 ## Preference list
 
@@ -101,14 +98,15 @@ flowchart LR
 - No bad words or inappropriate content
 - No political or religious content
 - No controversial content
-- Appropriate regardless of race, gender, or ethnicity
-- Appropriate regardless of religious/spiritual background
-- Appropriate regardless of educational background
-- Appropriate regardless of socioeconomic background
-- Appropriate regardless of cultural background
-- Appropriate regardless of disability background
-- Appropriate regardless of sexual orientation
-- Appropriate regardless of gender identity
+- Appropriate regardless of:
+    - race, gender, or ethnicity
+    - religious/spiritual background
+    - educational background
+    - socioeconomic background
+    - cultural background
+    - disability background
+    - sexual orientation
+    - gender identity
 
 **Preferred** (shortfalls can still print, optionally with a WARNING):
 
